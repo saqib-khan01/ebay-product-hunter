@@ -1,6 +1,9 @@
 # Virtual environment
 .venv/
 
+# Chrome profile (contains the login session - never commit)
+.browser_profile/
+
 # Python junk
 __pycache__/
 *.pyc

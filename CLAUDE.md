@@ -19,7 +19,10 @@ The owner is a complete beginner: explain steps simply and keep code easy to rea
 
 ## Rules (must always be followed)
 1. **No eBay API.** Browse the website only.
-2. **No login, ever.** Never sign in to eBay or any account; never ask for or store credentials.
+2. **Logging in is allowed, but only by the user.** If eBay shows a sign-in page, pause and
+   let the user log in by hand in the visible Chrome window. Never ask for, type, or store
+   the user's username/password. The login session is kept in the git-ignored
+   `.browser_profile/` folder.
 3. **Visible Chrome only.** Never run headless.
 4. **Sold listings only**, on these sites only:
    - ebay.co.uk

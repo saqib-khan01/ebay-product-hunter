@@ -4,9 +4,10 @@ Usage:
     .\.venv\Scripts\python.exe first_scrape.py "lego star wars"
     .\.venv\Scripts\python.exe first_scrape.py "lego star wars" --site ebay.com
 
-Rules (see CLAUDE.md): visible Chrome, no login, sold listings only on the three
-allowed sites, 3-8 second random wait before each page load, and STOP if a
-captcha or block page appears (never try to bypass it).
+Rules (see CLAUDE.md): visible Chrome, sold listings only on the three allowed
+sites, 3-8 second random wait before each page load, and STOP if a captcha or
+block page appears (never try to bypass it). If eBay shows a sign-in page, the
+script pauses so YOU can log in by hand in the Chrome window.
 """
 
 import argparse
@@ -31,6 +32,10 @@ BLOCK_SIGNS = [
     "unusual traffic",
     "security measure",
 ]
+
+
+# Folder where Chrome keeps your login session (git-ignored, never commit it).
+PROFILE_DIR = ".browser_profile"
 
 
 class BlockedError(Exception):
@@ -59,6 +64,11 @@ def check_for_block(page) -> None:
         raise BlockedError(page.url)
 
 
+def is_sign_in_page(page) -> bool:
+    """True if eBay sent us to its sign-in page."""
+    return "signin" in page.url.lower() or page.title().lower().startswith("sign in")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Load one eBay sold-listings page.")
     parser.add_argument("search", help='what to search for, e.g. "lego star wars"')
@@ -72,11 +82,24 @@ def main() -> int:
 
     with sync_playwright() as p:
         # channel="chrome" = your real Google Chrome; headless=False = visible window.
-        browser = p.chromium.launch(channel="chrome", headless=False)
-        page = browser.new_page()
+        # The profile folder remembers your login so you only sign in once.
+        browser = p.chromium.launch_persistent_context(
+            PROFILE_DIR, channel="chrome", headless=False
+        )
+        page = browser.pages[0] if browser.pages else browser.new_page()
         try:
             page.goto(url, wait_until="domcontentloaded")
             check_for_block(page)
+
+            if is_sign_in_page(page):
+                print("\neBay is asking you to sign in.")
+                input("Log in by hand in the Chrome window, then press Enter here...")
+                polite_wait()
+                page.goto(url, wait_until="domcontentloaded")
+                check_for_block(page)
+                if is_sign_in_page(page):
+                    print("Still on the sign-in page, so I am stopping here.")
+                    return 1
 
             items = page.locator("li.s-item, li.s-card")
             count = items.count()
