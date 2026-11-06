@@ -1,0 +1,22 @@
+# Virtual environment
+.venv/
+
+# Python junk
+__pycache__/
+*.pyc
+
+# Collected data (local only)
+*.db
+*.sqlite
+*.sqlite3
+exports/
+*.xlsx
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Secrets
+.env
