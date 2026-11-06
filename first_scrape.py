@@ -69,6 +69,28 @@ def is_sign_in_page(page) -> bool:
     return "signin" in page.url.lower() or page.title().lower().startswith("sign in")
 
 
+def wait_for_login(page, max_seconds: int = 300) -> bool:
+    """Wait (checking every 2 seconds) until you have logged in. True if it worked."""
+    deadline = time.time() + max_seconds
+    while time.time() < deadline:
+        time.sleep(2)
+        try:
+            if not is_sign_in_page(page):
+                page.wait_for_load_state("domcontentloaded")
+                return True
+        except Exception:
+            pass  # the page was in the middle of navigating; check again
+    return False
+
+
+def pause(message: str) -> None:
+    """Wait for Enter. If no keyboard is attached, just wait 60 seconds instead."""
+    try:
+        input(message)
+    except EOFError:
+        time.sleep(60)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Load one eBay sold-listings page.")
     parser.add_argument("search", help='what to search for, e.g. "lego star wars"')
@@ -93,13 +115,15 @@ def main() -> int:
 
             if is_sign_in_page(page):
                 print("\neBay is asking you to sign in.")
-                input("Log in by hand in the Chrome window, then press Enter here...")
-                polite_wait()
-                page.goto(url, wait_until="domcontentloaded")
-                check_for_block(page)
-                if is_sign_in_page(page):
-                    print("Still on the sign-in page, so I am stopping here.")
+                print("Log in by hand in the Chrome window. I will wait up to 5 minutes...")
+                if not wait_for_login(page):
+                    print("Still on the sign-in page after 5 minutes, so I am stopping here.")
                     return 1
+                check_for_block(page)
+                if page.locator("li.s-item, li.s-card").count() == 0:
+                    polite_wait()
+                    page.goto(url, wait_until="domcontentloaded")
+                    check_for_block(page)
 
             items = page.locator("li.s-item, li.s-card")
             count = items.count()
@@ -109,7 +133,7 @@ def main() -> int:
                 lines = [l for l in items.nth(i).inner_text().split("\n") if l.strip()]
                 print(f"  {i + 1}. " + " | ".join(lines[:4]))
 
-            input("\nPress Enter to close the browser...")
+            pause("\nPress Enter to close the browser...")
         except BlockedError as err:
             print("\n" + "=" * 60)
             print("STOPPED: eBay showed a captcha or block page.")
@@ -117,7 +141,7 @@ def main() -> int:
             print("I will NOT try to get around it. Please look at the Chrome window,")
             print("and wait a while before trying again.")
             print("=" * 60)
-            input("Press Enter to close the browser...")
+            pause("Press Enter to close the browser...")
             return 1
         finally:
             browser.close()
