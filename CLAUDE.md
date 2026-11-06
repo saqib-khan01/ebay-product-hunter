@@ -26,9 +26,8 @@ The owner is a complete beginner: explain steps simply and keep code easy to rea
    - ebay.com
    - ebay.com.au
    Do not visit any other eBay site or domain.
-5. **Polite pacing:** wait a random 3-8 seconds between page loads, and load at most
-   **300 pages per day**. The daily count must be tracked (persisted, e.g. in SQLite)
-   so restarting the script does not reset it.
+5. **Polite pacing:** wait a random 3-8 seconds between page loads. There is no
+   daily page limit.
 6. **Captcha / block pages:** if a captcha, "verify you are human", or block/robot-check
    page appears, **stop immediately and tell the user.** Never try to solve, bypass,
    or work around it (no proxies, no stealth plugins, no retry loops).
